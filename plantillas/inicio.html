@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<h1>{{ 'Resumen del club' if usuario.puede('ver_todos') else 'Mi equipo' }}</h1>
+<p class="sub">{{ club }}</p>
+{% if resumen %}
+<div class="datos">
+  <div class="dato"><small>Grupos</small><b>{{ resumen.equipos }}</b></div>
+  <div class="dato"><small>Socios de alta</small><b>{{ resumen.socios }}</b></div>
+  <div class="dato"><small>Cuotas pendientes</small><b>{{ resumen.pendientes }}</b></div>
+  <div class="dato"><small>Deuda total</small><b>{{ resumen.deuda }} €</b></div>
+</div>
+{% endif %}
+
+{% if hoy %}
+<h2>Hoy</h2>
+<div class="rejilla">
+  <div class="tarjeta">
+    {% set proximas = hoy.reservas|selectattr('hora_fin', 'gt', hoy.hora)|list %}
+    <h3>Reservas de hoy ({{ hoy.reservas|length }})</h3>
+    <div class="sub" style="margin-bottom:6px">Próximas · {{ hoy.reservas|rejectattr('pagada')|list|length }} por cobrar</div>
+    <ul>{% for r in proximas[:8] %}<li><b>{{ r.hora_inicio }}:00–{{ r.hora_fin }}:00</b> {{ r.instalacion.nombre }} · {{ r.cliente }}
+      {% if not r.pagada %}<span class="etiqueta amarilla">por cobrar</span>{% endif %}</li>
+      {% else %}<li><i>No quedan más por hoy</i></li>{% endfor %}</ul>
+    {% if proximas|length > 8 %}<div class="sub">y {{ proximas|length - 8 }} más…</div>{% endif %}
+    <p style="margin:10px 0 0"><a href="{{ url_for('reservas') }}">Ver el cuadrante →</a></p>
+  </div>
+  <div class="tarjeta">
+    <h3>Caja de hoy</h3>
+    <div class="total-caja">{{ hoy.cobrado }} €</div>
+    <p style="margin:6px 0 0"><a href="{{ url_for('caja') }}">Ver los cobros →</a></p>
+  </div>
+  <div class="tarjeta">
+    <h3>Tienda</h3>
+    <dl><dt>Pedidos por cobrar</dt><dd>{{ hoy.por_cobrar }}</dd><dt>Pagados por entregar</dt><dd>{{ hoy.por_entregar }}</dd></dl>
+    <p style="margin:10px 0 0"><a href="{{ url_for('tienda') }}">Ir a la tienda →</a></p>
+  </div>
+</div>
+{% endif %}
+
+{% if secciones %}
+<h2>Secciones</h2>
+<div class="secciones">
+  {% for deporte, d in secciones.items() %}
+  <a class="seccion" href="{{ url_for('actividades') }}">
+    <span class="sub">{{ deporte }}</span>
+    <b>{{ d.socios }}</b>
+    <span class="sub">socios en {{ d.grupos }} grupo(s){% if d.plazas %} · {{ (100 * d.socios / d.plazas)|round|int }} % de ocupación{% endif %}
+      {% if d.llenos %}<br><b style="font-size:12px;color:var(--rojo);display:inline">{{ d.llenos }} completo(s)</b>{% endif %}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if incompletas %}
+<h2>Fichas que revisar ({{ incompletas|length }})</h2>
+{% for s, avisos in incompletas[:6] %}
+  <div class="alerta"><a href="{{ url_for('ficha', id_=s.id) }}"><b>{{ s.nombre }}</b></a>: {{ avisos|join(' ') }}</div>
+{% endfor %}
+{% if incompletas|length > 6 %}<p><a href="{{ url_for('socios', ver='revisar') }}">Ver las {{ incompletas|length }} fichas →</a></p>{% endif %}
+{% endif %}
+
+{% if plantillas %}
+<h2>{{ 'Mi grupo' if plantillas|length == 1 else 'Plantillas' }}</h2>
+<div class="rejilla">
+  {% for equipo, socios in plantillas %}
+  <div class="tarjeta">
+    <h3>{{ equipo.nombre }}</h3>
+    <div class="sub" style="margin-bottom:8px">{{ equipo.categoria }} · {{ equipo.horario }} · entrenador: {{ equipo.entrenador or '—' }} · {{ socios|length }}{% if equipo.plazas %}/{{ equipo.plazas }}{% endif %} socios</div>
+    <ul>{% for s in socios %}<li><a href="{{ url_for('ficha', id_=s.id) }}">{{ s.nombre }}</a>{% if s.edad is not none %} <span class="sub">({{ s.edad }} años)</span>{% endif %}</li>{% else %}<li><i>Sin socios</i></li>{% endfor %}</ul>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

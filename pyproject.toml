@@ -1,0 +1,15 @@
+# Instalación del ORM con pip:   pip install -e .
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "estadio-orm"
+version = "1.0.0"
+description = "ORM (mapeo objeto-relacional) para la base de datos diegofo | estadio"
+authors = [{ name = "Diego Fernández Ortega" }]
+requires-python = ">=3.10"
+readme = "README.md"
+
+[tool.setuptools]
+packages = ["estadio_orm"]

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titulo %}{{ 'Editar ' ~ socio.nombre if socio else 'Nuevo socio' }}{% endblock %}
+{% block contenido %}
+{% macro v(campo) %}{{ valores.get(campo, (socio|attr(campo)) if socio else '') }}{% endmacro %}
+<h1>{{ 'Editar ficha de ' ~ socio.nombre if socio else 'Nuevo socio' }}</h1>
+<p class="sub">El DNI, el IBAN y las fechas se comprueban al guardar. Los menores de edad necesitan un tutor.</p>
+<form class="formulario" method="post">
+  <h3>Datos personales</h3>
+  <label class="ancho">Nombre y apellidos * <input name="nombre" value="{{ v('nombre') }}" required maxlength="60"></label>
+  <label>DNI / NIE <input name="dni" value="{{ v('dni') }}" placeholder="12345678Z"></label>
+  <label>Fecha de nacimiento <input name="fecha_nacimiento" type="date" value="{{ v('fecha_nacimiento') }}"></label>
+  <label>Grupo / equipo *
+    <select name="equipo">
+      {% set actual = valores.get('equipo', socio.equipo_id|string if socio else '') %}
+      {% for deporte, lista in equipos|groupby('deporte') %}
+      <optgroup label="{{ deporte }}">
+        {% for e in lista %}{% set n = ocupacion.get(e.id, 0) %}
+        <option value="{{ e.id }}" {{ 'selected' if actual == e.id|string }}>{{ e.nombre }} · {{ e.horario }}{% if e.plazas %} ({{ n }}/{{ e.plazas }}{{ ' COMPLETO' if n >= e.plazas }}){% endif %}</option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Email <input name="email" type="email" value="{{ v('email') }}"></label>
+  <label>Teléfono <input name="telefono" value="{{ v('telefono') }}"></label>
+  <label>Dirección <input name="direccion" value="{{ v('direccion') }}"></label>
+
+  <h3>Tutor legal (menores de 18)</h3>
+  <label>Nombre del tutor <input name="tutor" value="{{ v('tutor') }}"></label>
+  <label>Teléfono del tutor <input name="telefono_tutor" value="{{ v('telefono_tutor') }}"></label>
+  <span></span>
+
+  <h3>Pago</h3>
+  <label>Forma de pago
+    <select name="forma_pago">
+      {% set fp = valores.get('forma_pago', socio.forma_pago if socio else 'Domiciliación') %}
+      {% for f in formas_pago %}<option {{ 'selected' if fp == f }}>{{ f }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Tarifa
+    <select name="tarifa">
+      {% set ta = valores.get('tarifa', (socio.tarifa_id or 0)|string if socio else '0') %}
+      <option value="0">La de su equipo</option>
+      {% for t in tarifas %}<option value="{{ t.id }}" {{ 'selected' if ta == t.id|string }}>{{ t.nombre }} ({{ t.importe }} €/mes)</option>{% endfor %}
+    </select>
+  </label>
+  <label>Descuento (%) <input name="descuento" type="number" min="0" max="100" value="{{ valores.get('descuento', socio.descuento if socio else 0) }}"></label>
+  <span></span>
+  <label style="grid-column: span 2">IBAN (obligatorio si es domiciliación)
+    <input name="iban" value="{{ v('iban') }}" placeholder="ES00 0000 0000 0000 0000 0000" style="font-family:Consolas,monospace"></label>
+
+  <label class="ancho">Notas <textarea name="notas" rows="2">{{ v('notas') }}</textarea></label>
+  <div class="ancho acciones">
+    <button class="principal">{{ 'Guardar cambios' if socio else 'Dar de alta' }}</button>
+    <a class="boton secundario" href="{{ url_for('ficha', id_=socio.id) if socio else url_for('socios') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

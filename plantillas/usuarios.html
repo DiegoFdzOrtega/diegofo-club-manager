@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+{% block contenido %}
+<h1>Usuarios de la aplicación</h1>
+<p class="sub">Los trabajadores del club que pueden entrar. Las contraseñas se guardan cifradas (hash PBKDF2): ni el administrador puede verlas.</p>
+<table>
+  <tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Equipo</th><th>Último acceso</th><th>Estado</th><th></th></tr>
+  {% for u in usuarios %}
+  <tr class="{{ '' if u.activo else 'inactivo' }}">
+    <td><b>{{ u.nombre }}</b></td>
+    <td>{{ u.usuario }}</td>
+    <td>{{ u.rol }}</td>
+    <td>{{ u.equipo.nombre if u.equipo else '—' }}</td>
+    <td>{{ u.ultimo_acceso or 'nunca' }}</td>
+    <td>{% if u.activo %}<span class="etiqueta verde">Activo</span>{% else %}<span class="etiqueta gris">Desactivado</span>{% endif %}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <form class="en-linea" method="post" action="{{ url_for('usuario_nueva_clave', id_=u.id) }}"
+            onsubmit="return confirm('¿Generar una contraseña provisional nueva para {{ u.usuario }}?')">
+        <button class="secundario">Nueva contraseña</button>
+      </form>
+      {% if u.id != usuario.id %}
+      <form class="en-linea" method="post" action="{{ url_for('usuario_activo', id_=u.id) }}">
+        <button class="peligro">{{ 'Desactivar' if u.activo else 'Activar' }}</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Nuevo usuario</h2>
+<form class="formulario" method="post">
+  <label>Nombre * <input name="nombre" value="{{ valores.get('nombre', '') }}" required maxlength="60"></label>
+  <label>Usuario (para entrar) * <input name="usuario" value="{{ valores.get('usuario', '') }}" required maxlength="30" pattern="\S+"></label>
+  <label>Contraseña inicial * <input name="clave" type="password" minlength="6" required autocomplete="new-password"></label>
+  <label>Rol
+    <select name="rol">{% for r in roles %}<option {{ 'selected' if valores.get('rol', 'Secretaría') == r }}>{{ r }}</option>{% endfor %}</select>
+  </label>
+  <label>Equipo (solo entrenadores)
+    <select name="equipo"><option value="0">—</option>
+      {% for e in equipos %}<option value="{{ e.id }}" {{ 'selected' if valores.get('equipo') == e.id|string }}>{{ e.nombre }}</option>{% endfor %}
+    </select>
+  </label>
+  <div style="align-self:end"><button class="principal">Crear usuario</button></div>
+</form>
+
+<h2>Qué puede hacer cada rol</h2>
+<table>
+  <tr><th>Permiso</th><th>Administrador</th><th>Secretaría</th><th>Entrenador</th></tr>
+  <tr><td>Ver socios</td><td>Todos</td><td>Todos</td><td>Solo su equipo</td></tr>
+  <tr><td>Alta, edición y baja de socios</td><td>✔</td><td>✔</td><td>—</td></tr>
+  <tr><td>IBAN, cuotas, cobros y remesa</td><td>✔</td><td>✔</td><td>—</td></tr>
+  <tr><td>Informe económico</td><td>✔</td><td>✔</td><td>—</td></tr>
+  <tr><td>Gestionar usuarios</td><td>✔</td><td>—</td><td>—</td></tr>
+  <tr><td>Ver el SQL generado (depuración)</td><td>✔</td><td>—</td><td>—</td></tr>
+</table>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titulo %}Nueva reserva{% endblock %}
+{% block contenido %}
+<h1>Nueva reserva</h1>
+<p class="sub">El precio se calcula solo: tarifa de socio o de no socio × horas. Si la pista ya está ocupada, no se guarda.</p>
+<form class="formulario" method="post">
+  <h3>Pista y horario</h3>
+  <label>Pista
+    <select name="instalacion" id="pista">
+      {% for p in pistas %}
+      <option value="{{ p.id }}" data-socio="{{ p.precio_socio }}" data-otro="{{ p.precio_no_socio }}"
+              {{ 'selected' if datos.get('instalacion') == p.id|string }}>{{ p.nombre }} ({{ p.deporte }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Fecha <input type="date" name="fecha" value="{{ datos.get('fecha', hoy_iso) }}" required></label>
+  <div style="display:flex;gap:10px">
+    <label style="flex:1">Hora de inicio
+      <select name="hora" id="hora">{% for h in horas %}<option value="{{ h }}" {{ 'selected' if datos.get('hora') == h|string }}>{{ h }}:00</option>{% endfor %}</select>
+    </label>
+    <label style="flex:1">Duración
+      <select name="duracion" id="duracion">{% for d in [1, 2, 3] %}<option value="{{ d }}" {{ 'selected' if datos.get('duracion') == d|string }}>{{ d }} h</option>{% endfor %}</select>
+    </label>
+  </div>
+
+  <h3>Quién reserva</h3>
+  <label>Socio
+    <select name="socio" id="socio">
+      <option value="0">— No es socio —</option>
+      {% for s in socios %}<option value="{{ s.id }}" {{ 'selected' if datos.get('socio') == s.id|string }}>{{ s.nombre }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Nombre (si no es socio) <input name="nombre_cliente" value="{{ datos.get('nombre_cliente', '') }}"></label>
+  <label>Teléfono <input name="telefono" value="{{ datos.get('telefono', '') }}"></label>
+
+  <h3>Pago</h3>
+  <div class="ancho" style="display:flex;gap:18px;align-items:end;flex-wrap:wrap">
+    <div><span class="sub">Importe</span><div class="total-caja" id="importe" style="font-size:26px">—</div></div>
+    <label style="flex-direction:row;align-items:center;gap:6px;font-size:14px;color:var(--texto)">
+      <input type="checkbox" name="pagar_ahora" value="si" {{ 'checked' if datos.get('pagar_ahora') == 'si' }}> Cobrar ahora</label>
+    <label>Forma de cobro
+      <select name="forma">{% for f in formas_cobro %}<option>{{ f }}</option>{% endfor %}</select>
+    </label>
+  </div>
+  <div class="ancho acciones">
+    <button class="principal">Reservar</button>
+    <a class="boton secundario" href="{{ url_for('reservas', fecha=datos.get('fecha', hoy_iso)) }}">Cancelar</a>
+  </div>
+</form>
+<script>
+  // Solo para enseñar el precio mientras se rellena: el que vale es el que calcula el servidor
+  function actualizar() {
+    const pista = document.querySelector('#pista').selectedOptions[0];
+    const esSocio = document.querySelector('#socio').value !== '0';
+    const horas = Number(document.querySelector('#duracion').value);
+    const precio = Number(esSocio ? pista.dataset.socio : pista.dataset.otro);
+    document.querySelector('#importe').textContent = (precio * horas) + ' €';
+  }
+  ['#pista', '#socio', '#duracion'].forEach(s => document.querySelector(s).addEventListener('change', actualizar));
+  actualizar();
+</script>
+{% endblock %}

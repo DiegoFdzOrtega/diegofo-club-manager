@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar · {{ club }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+<div class="acceso">
+  <div class="marca-acceso">estadio <span>·</span> Club Manager</div>
+  <div class="sub">{{ club }}</div>
+  {% for tipo, texto in get_flashed_messages(with_categories=true) %}
+    <div class="aviso {{ tipo }}" style="margin:16px 0 0">{{ texto }}</div>
+  {% endfor %}
+  <form method="post">
+    <label>Usuario <input name="usuario" value="{{ usuario }}" autocomplete="username" autofocus required></label>
+    <label>Contraseña <input name="clave" type="password" autocomplete="current-password" required></label>
+    <button class="principal">Entrar</button>
+  </form>
+  <div class="demo">
+    <b>Demo:</b> admin / admin123 · secretaria / secretaria123 · rosa / rosa1234 (entrenadora del Alevín A)
+  </div>
+</div>
+</body>
+</html>

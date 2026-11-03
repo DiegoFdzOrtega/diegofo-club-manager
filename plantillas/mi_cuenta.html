@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Mi cuenta{% endblock %}
+{% block contenido %}
+<h1>Mi cuenta</h1>
+<div class="rejilla">
+  <div class="tarjeta">
+    <h3>Mis datos</h3>
+    <dl>
+      <dt>Nombre</dt><dd>{{ usuario.nombre }}</dd>
+      <dt>Usuario</dt><dd>{{ usuario.usuario }}</dd>
+      <dt>Rol</dt><dd>{{ usuario.rol }}</dd>
+      {% if usuario.equipo %}<dt>Equipo</dt><dd>{{ usuario.equipo.nombre }}</dd>{% endif %}
+      <dt>Último acceso</dt><dd>{{ usuario.ultimo_acceso or '—' }}</dd>
+    </dl>
+  </div>
+  <form class="tarjeta" method="post" style="display:flex;flex-direction:column;gap:12px">
+    <h3>Cambiar contraseña</h3>
+    <label>Contraseña actual <input name="actual" type="password" autocomplete="current-password" required></label>
+    <label>Nueva contraseña (mínimo 6 caracteres) <input name="nueva" type="password" autocomplete="new-password" minlength="6" required></label>
+    <label>Repite la nueva <input name="repetir" type="password" autocomplete="new-password" minlength="6" required></label>
+    <div><button class="principal">Cambiar contraseña</button></div>
+  </form>
+</div>
+{% endblock %}

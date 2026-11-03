@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titulo %}Actividades{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+  <div>
+    <h1>Actividades</h1>
+    <div class="sub">Equipos y grupos de cada sección, con su horario, entrenador, tarifa y plazas.</div>
+  </div>
+</div>
+
+{% for deporte, grupos in por_deporte.items() %}
+<h2>{{ deporte }} <span class="sub" style="font-weight:400">· {{ grupos|length }} grupo(s)</span></h2>
+<table>
+  <tr><th>Grupo</th><th>Categoría</th><th>Horario</th><th>Entrenador</th><th>Tarifa</th><th style="width:220px">Ocupación</th><th></th></tr>
+  {% for e in grupos %}
+  {% set n = ocupacion.get(e.id, 0) %}
+  {% set pct = (100 * n / e.plazas)|round|int if e.plazas else 0 %}
+  <tr>
+    <td><a href="{{ url_for('socios', grupo=e.id) }}"><b>{{ e.nombre }}</b></a></td>
+    <td>{{ e.categoria }}</td>
+    <td>{{ e.horario or '—' }}</td>
+    <td>{{ e.entrenador or '—' }}</td>
+    <td>{{ e.tarifa.nombre if e.tarifa else '—' }}{% if e.tarifa %} <span class="sub">({{ e.tarifa.importe }} €)</span>{% endif %}</td>
+    <td>
+      {% if e.plazas %}
+      <div class="barra"><div style="width:{{ [pct, 100]|min }}%" class="{{ 'llena' if n >= e.plazas else ('casi' if pct >= 80 else '') }}"></div></div>
+      <span class="sub">{{ n }}/{{ e.plazas }} plazas{% if n >= e.plazas %} · <b style="color:var(--rojo)">COMPLETO</b>{% endif %}</span>
+      {% else %}<span class="sub">{{ n }} socios · sin límite</span>{% endif %}
+    </td>
+    <td style="text-align:right">
+      {% if usuario.puede('editar_socios') %}
+      <details class="editar-grupo"><summary>Editar</summary>
+        <form method="post" class="mini-form">
+          <input type="hidden" name="id" value="{{ e.id }}">
+          <label>Horario <input name="horario" value="{{ e.horario }}"></label>
+          <label>Entrenador <input name="entrenador" value="{{ e.entrenador }}"></label>
+          <label>Plazas (0 = sin límite) <input name="plazas" type="number" min="0" value="{{ e.plazas }}"></label>
+          <label>Tarifa <select name="tarifa">{% for t in tarifas %}<option value="{{ t.id }}" {{ 'selected' if e.tarifa_id == t.id }}>{{ t.nombre }}</option>{% endfor %}</select></label>
+          <button class="principal">Guardar</button>
+        </form>
+      </details>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endfor %}
+
+{% if usuario.puede('editar_socios') %}
+<h2>Nuevo grupo</h2>
+<form class="formulario" method="post">
+  <label>Nombre * <input name="nombre" required maxlength="40" placeholder="p. ej. Natación Iniciación B"></label>
+  <label>Sección <select name="deporte">{% for d in deportes %}<option>{{ d }}</option>{% endfor %}</select></label>
+  <label>Categoría / nivel <input name="categoria" placeholder="Alevín, Iniciación, Adultos..."></label>
+  <label>Horario <input name="horario" placeholder="L-X 17:30-18:30"></label>
+  <label>Entrenador <input name="entrenador"></label>
+  <label>Plazas (0 = sin límite) <input name="plazas" type="number" min="0" value="0"></label>
+  <label>Tarifa <select name="tarifa">{% for t in tarifas %}<option value="{{ t.id }}">{{ t.nombre }} ({{ t.importe }} €)</option>{% endfor %}</select></label>
+  <div style="align-self:end"><button class="principal">Crear grupo</button></div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import boton_cobrar with context %}
+{% block titulo %}Reservas{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+  <div>
+    <h1>Reservas de pistas</h1>
+    <div class="sub">{{ dia.strftime('%d/%m/%Y') }} · de {{ horas[0] }}:00 a {{ horas[-1] + 1 }}:00</div>
+  </div>
+  <div class="navegar-dia">
+    <a class="boton secundario" href="{{ url_for('reservas', fecha=anterior, deporte=deporte or None) }}">← Día anterior</a>
+    <form method="get" class="en-linea"><input type="date" name="fecha" value="{{ dia.isoformat() }}" onchange="this.form.submit()"></form>
+    <a class="boton secundario" href="{{ url_for('reservas', fecha=hoy_iso) }}">Hoy</a>
+    <a class="boton secundario" href="{{ url_for('reservas', fecha=siguiente, deporte=deporte or None) }}">Día siguiente →</a>
+    {% if usuario.puede('reservas') %}
+    <a class="boton principal" href="{{ url_for('reserva_nueva', fecha=dia.isoformat()) }}">+ Nueva reserva</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="filtros">Pistas:
+  <a href="{{ url_for('reservas', fecha=dia.isoformat()) }}" class="{{ 'activo' if not deporte }}">Todas</a>
+  {% for d in deportes %}<a href="{{ url_for('reservas', fecha=dia.isoformat(), deporte=d) }}" class="{{ 'activo' if deporte == d }}">{{ d }}</a>{% endfor %}
+</div>
+<div class="leyenda">
+  <span><i style="background:#16553f"></i>Reservada y pagada</span>
+  <span><i style="background:#c98a00"></i>Reservada, pendiente de pago</span>
+  <span><i style="background:white;border:1px solid #cfd8d3"></i>Libre{% if usuario.puede('reservas') %} (pulsa para reservar){% endif %}</span>
+</div>
+
+<table class="cuadrante">
+  <tr><th></th>{% for p in pistas %}<th>{{ p.nombre }}<br><small style="font-weight:400;opacity:.8">{{ p.deporte }} · {{ p.precio_socio }}/{{ p.precio_no_socio }} €/h</small></th>{% endfor %}</tr>
+  {% for h in horas %}
+  <tr>
+    <td class="hora">{{ h }}:00</td>
+    {% for p in pistas %}
+      {% set r = ocupado.get((h, p.id)) %}
+      {% if r %}
+        {% if r.hora_inicio == h %}
+        <td class="ocupada {{ '' if r.pagada else 'pendiente' }}" rowspan="{{ r.duracion }}">
+          <b>{{ r.cliente }}</b>{% if not r.socio %} <small>(no socio)</small>{% endif %}<br>
+          <small>{{ r.hora_inicio }}:00–{{ r.hora_fin }}:00 · {{ r.importe }} €</small>
+        </td>
+        {% endif %}
+      {% else %}
+        <td>{% if usuario.puede('reservas') %}<a class="libre" href="{{ url_for('reserva_nueva', fecha=dia.isoformat(), instalacion=p.id, hora=h) }}">libre</a>{% endif %}</td>
+      {% endif %}
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Reservas del día ({{ reservas_dia|length }})</h2>
+<table>
+  <tr><th>Hora</th><th>Pista</th><th>Cliente</th><th>Teléfono</th><th class="num">Importe</th><th>Pago</th><th></th></tr>
+  {% for r in reservas_dia %}
+  <tr>
+    <td>{{ r.hora_inicio }}:00–{{ r.hora_fin }}:00</td>
+    <td>{{ r.instalacion.nombre }}</td>
+    <td>{% if r.socio %}<a href="{{ url_for('ficha', id_=r.socio_id) }}">{{ r.cliente }}</a>{% else %}{{ r.cliente }} <span class="sub">(no socio)</span>{% endif %}</td>
+    <td>{{ r.telefono or (r.socio.telefono if r.socio) or '' }}</td>
+    <td class="num">{{ r.importe }} €</td>
+    <td>{% if r.pagada %}<span class="etiqueta verde">Pagada</span>{% else %}<span class="etiqueta amarilla">Pendiente</span>{% endif %}</td>
+    <td style="text-align:right;white-space:nowrap">
+      {% if usuario.puede('reservas') %}
+        {% if not r.pagada %}{{ boton_cobrar(url_for('reserva_cobrar', id_=r.id)) }}{% endif %}
+        <form class="en-linea" method="post" action="{{ url_for('reserva_cancelar', id_=r.id) }}"
+              onsubmit="return confirm('¿Cancelar la reserva de {{ r.cliente }}?')"><button class="peligro">Cancelar</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7"><i>No hay reservas este día.</i></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

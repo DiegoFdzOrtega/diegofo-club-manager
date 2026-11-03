@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "_macros.html" import boton_cobrar with context %}
+{% block titulo %}Tienda{% endblock %}
+{% block contenido %}
+<h1>Tienda de equipaciones</h1>
+<p class="sub">Al hacer un pedido se descuenta del stock en la misma transacción: si no quedan unidades, no se vende.</p>
+
+<h2>Nuevo pedido</h2>
+<form class="panel" method="post" action="{{ url_for('pedido_nuevo') }}">
+  <label>Socio
+    <select name="socio">{% for s in socios %}<option value="{{ s.id }}">{{ s.nombre }}</option>{% endfor %}</select>
+  </label>
+  <label>Producto
+    <select name="producto" id="producto">
+      {% for p in productos if p.activo %}
+      <option value="{{ p.id }}" data-tallas="{{ p.tallas }}">{{ p.nombre }} · {{ p.precio }} € ({{ p.stock }} en stock)</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Talla <select name="talla" id="talla"></select></label>
+  <label>Cantidad <input name="cantidad" type="number" min="1" value="1" style="width:70px"></label>
+  <label style="flex-direction:row;align-items:center;gap:6px;font-size:14px;color:var(--texto)">
+    <input type="checkbox" name="pagar_ahora" value="si" checked> Cobrar ahora</label>
+  <label>Forma de cobro <select name="forma">{% for f in formas_cobro %}<option>{{ f }}</option>{% endfor %}</select></label>
+  <button class="principal">Hacer pedido</button>
+</form>
+
+<div class="cabecera" style="margin-top:22px">
+  <h2 style="margin:0">Pedidos</h2>
+  <div class="filtros">Ver:
+    <a href="{{ url_for('tienda', ver='abiertos') }}" class="{{ 'activo' if ver == 'abiertos' }}">Por cobrar o entregar</a>
+    <a href="{{ url_for('tienda', ver='todos') }}" class="{{ 'activo' if ver == 'todos' }}">Todos</a>
+  </div>
+</div>
+<table>
+  <tr><th>Nº</th><th>Fecha</th><th>Socio</th><th>Producto</th><th>Talla</th><th class="num">Uds.</th><th class="num">Importe</th><th>Estado</th><th></th></tr>
+  {% for p in pedidos %}
+  <tr>
+    <td>{{ p.id }}</td>
+    <td>{{ p.fecha }}</td>
+    <td><a href="{{ url_for('ficha', id_=p.socio_id) }}">{{ p.socio.nombre }}</a></td>
+    <td>{{ p.producto.nombre }}</td>
+    <td>{{ p.talla }}</td>
+    <td class="num">{{ p.cantidad }}</td>
+    <td class="num">{{ p.importe }} €</td>
+    <td><span class="etiqueta {{ {'Pendiente de pago':'amarilla','Pagado':'verde','Entregado':'gris','Cancelado':'roja'}[p.estado] }}">{{ p.estado }}</span></td>
+    <td style="text-align:right;white-space:nowrap">
+      {% if p.estado == 'Pendiente de pago' %}
+        {{ boton_cobrar(url_for('pedido_accion', id_=p.id, accion='cobrar')) }}
+        <form class="en-linea" method="post" action="{{ url_for('pedido_accion', id_=p.id, accion='cancelar') }}"><button class="peligro">Cancelar</button></form>
+      {% elif p.estado == 'Pagado' %}
+        <form class="en-linea" method="post" action="{{ url_for('pedido_accion', id_=p.id, accion='entregar') }}"><button class="principal">Entregar</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="9"><i>No hay pedidos.</i></td></tr>
+  {% endfor %}
+</table>
+
+<h2>Catálogo y stock</h2>
+<div class="productos">
+  {% for p in productos %}
+  <div class="producto">
+    <b>{{ p.nombre }}</b>
+    <span class="precio">{{ p.precio }} €</span>
+    <span class="sub">Tallas: {{ p.tallas }}</span>
+    <span class="{{ 'stock-bajo' if p.stock < 5 }}">{{ p.stock }} en stock{% if p.stock < 5 %} · ¡reponer!{% endif %}</span>
+    <form method="post" action="{{ url_for('producto_editar', id_=p.id) }}">
+      <label>Precio <input name="precio" type="number" min="0" value="{{ p.precio }}"></label>
+      <label>Stock <input name="stock" type="number" min="0" value="{{ p.stock }}"></label>
+      <label style="width:100%">Tallas <input class="tallas" name="tallas" value="{{ p.tallas }}"></label>
+      <button class="secundario">Guardar</button>
+    </form>
+  </div>
+  {% endfor %}
+  <form class="producto" method="post" action="{{ url_for('producto_nuevo') }}" style="border:2px dashed #cfd8d3">
+    <b>Nuevo producto</b>
+    <label>Nombre <input class="tallas" name="nombre" required></label>
+    <div style="display:flex;gap:6px">
+      <label>Precio <input name="precio" type="number" min="0" required></label>
+      <label>Stock <input name="stock" type="number" min="0" value="0"></label>
+    </div>
+    <label>Tallas <input class="tallas" name="tallas" placeholder="S,M,L,XL"></label>
+    <button class="principal">Añadir</button>
+  </form>
+</div>
+<script>
+  // Las tallas del desplegable cambian según el producto elegido
+  const producto = document.querySelector('#producto'), talla = document.querySelector('#talla');
+  function rellenarTallas() {
+    const tallas = (producto.selectedOptions[0]?.dataset.tallas || '').split(',').map(t => t.trim()).filter(Boolean);
+    talla.innerHTML = tallas.map(t => `<option>${t}</option>`).join('');
+  }
+  producto.addEventListener('change', rellenarTallas);
+  rellenarTallas();
+</script>
+{% endblock %}

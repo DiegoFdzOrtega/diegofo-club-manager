@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titulo %}Informe{% endblock %}
+{% block contenido %}
+<h1>Informe de la temporada</h1>
+<div class="rejilla">
+  <div class="tarjeta">
+    <h3>Ingresos de la temporada</h3>
+    <div class="total-caja">{{ total_ingresos }} €</div>
+    <dl style="margin-top:8px">{% for f in ingresos %}<dt>{{ f.tipo }} ({{ f.cobros }})</dt><dd>{{ f.total }} €</dd>{% endfor %}</dl>
+  </div>
+  <div class="tarjeta">
+    <h3>Socios de alta por sección</h3>
+    <dl>{% for f in por_seccion %}<dt>{{ f.deporte or 'Otros' }}</dt><dd>{{ f.socios }}</dd>{% endfor %}</dl>
+  </div>
+</div>
+<h2>Deuda por socio</h2>
+<table>
+  <tr><th>Socio</th><th>Equipo</th><th class="num">Cuotas pendientes</th><th class="num">Deuda</th></tr>
+  {% for f in deudas %}
+  <tr><td><a href="{{ url_for('ficha', id_=f.id) }}">{{ f.nombre }}</a></td><td>{{ f.equipo }}</td><td class="num">{{ f.cuotas }}</td><td class="num">{{ f.deuda }} €</td></tr>
+  {% else %}<tr><td colspan="4"><i>Nadie debe nada.</i></td></tr>{% endfor %}
+</table>
+<div class="rejilla">
+  <div>
+    <h2>Recaudación por mes</h2>
+    <table>
+      <tr><th>Mes</th><th class="num">Cobradas</th><th class="num">Total</th></tr>
+      {% for f in recaudacion %}
+      <tr><td>{{ f.mes }}</td><td class="num">{{ f.cobradas }}</td><td class="num">{{ f.total }} €</td></tr>
+      {% else %}<tr><td colspan="3"><i>Aún no se ha cobrado nada.</i></td></tr>{% endfor %}
+    </table>
+  </div>
+  <div>
+    <h2>Socios de alta por equipo</h2>
+    <table>
+      <tr><th>Equipo</th><th>Categoría</th><th class="num">Socios</th></tr>
+      {% for f in por_equipo %}<tr><td>{{ f.nombre }}</td><td>{{ f.categoria }}</td><td class="num">{{ f.socios }}</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div>
+    <h2>Formas de pago</h2>
+    <table>
+      <tr><th>Forma de pago</th><th class="num">Socios</th></tr>
+      {% for f in por_pago %}<tr><td>{{ f.forma_pago or '(sin indicar)' }}</td><td class="num">{{ f.socios }}</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

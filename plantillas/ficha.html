@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% from "_macros.html" import boton_cobrar, forma_inicial with context %}
+{% block titulo %}{{ s.nombre }}{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+  <div>
+    <h1>{{ s.nombre }}</h1>
+    <div class="sub">Socio nº {{ s.id }} · {{ s.equipo.nombre }}
+      {% if s.activo %}<span class="etiqueta verde">De alta</span>{% else %}<span class="etiqueta gris">De baja</span>{% endif %}
+      {% if s.es_menor %}<span class="etiqueta amarilla">Menor de edad</span>{% endif %}
+    </div>
+  </div>
+  {% if usuario.puede('editar_socios') %}
+  <div class="acciones">
+    <a class="boton principal" href="{{ url_for('editar', id_=s.id) }}">Editar ficha</a>
+    <form class="en-linea" method="post" action="{{ url_for('cambiar_activo', id_=s.id) }}">
+      <button class="secundario">{{ 'Dar de baja' if s.activo else 'Reactivar' }}</button>
+    </form>
+    <form class="en-linea" method="post" action="{{ url_for('eliminar', id_=s.id) }}"
+          onsubmit="return confirm('¿Eliminar a {{ s.nombre }} y TODO su historial? No se puede deshacer.')">
+      <button class="peligro">Eliminar</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{% for aviso in s.avisos(usuario.puede('datos_bancarios')) %}<div class="alerta">{{ aviso }}</div>{% endfor %}
+
+<div class="rejilla" style="margin-top:14px">
+  <div class="tarjeta">
+    <h3>Datos personales</h3>
+    <dl>
+      <dt>DNI / NIE</dt><dd>{{ s.dni or '—' }}</dd>
+      <dt>Nacimiento</dt><dd>{{ s.fecha_nacimiento or '—' }}{% if s.edad is not none %} ({{ s.edad }} años){% endif %}</dd>
+      <dt>Email</dt><dd>{{ s.email or '—' }}</dd>
+      <dt>Teléfono</dt><dd>{{ s.telefono or '—' }}</dd>
+      <dt>Dirección</dt><dd>{{ s.direccion or '—' }}</dd>
+    </dl>
+  </div>
+  <div class="tarjeta">
+    <h3>Club</h3>
+    <dl>
+      <dt>Equipo</dt><dd>{{ s.equipo.nombre }} ({{ s.equipo.categoria }})</dd>
+      <dt>Entrenador</dt><dd>{{ s.equipo.entrenador or '—' }}</dd>
+      <dt>Categoría por edad</dt><dd>{{ s.categoria_edad or '—' }}</dd>
+      <dt>Alta</dt><dd>{{ s.fecha_alta or '—' }}{% if antiguedad is not none %} ({{ antiguedad }} año{{ '' if antiguedad == 1 else 's' }}){% endif %}</dd>
+    </dl>
+  </div>
+  {% if s.es_menor or s.tutor %}
+  <div class="tarjeta">
+    <h3>Tutor legal</h3>
+    <dl>
+      <dt>Nombre</dt><dd>{{ s.tutor or '—' }}</dd>
+      <dt>Teléfono</dt><dd>{{ s.telefono_tutor or '—' }}</dd>
+    </dl>
+  </div>
+  {% endif %}
+  {% if usuario.puede('datos_bancarios') %}
+  <div class="tarjeta">
+    <h3>Pago</h3>
+    <dl>
+      <dt>Tarifa</dt><dd>{{ s.tarifa_aplicada.nombre if s.tarifa_aplicada else '—' }}{% if not s.tarifa and s.tarifa_aplicada %} <span class="sub">(la de su equipo)</span>{% endif %}</dd>
+      {% if s.descuento %}<dt>Descuento</dt><dd>{{ s.descuento }} %</dd>{% endif %}
+      <dt>Cuota mensual</dt><dd>{{ s.importe_cuota() }} €</dd>
+      <dt>Forma de pago</dt><dd>{{ s.forma_pago }}</dd>
+      <dt>IBAN</dt>
+      <dd style="font-family:Consolas,monospace;font-size:12px;white-space:nowrap">{% if s.iban %}{{ s.iban_oculto }}
+        <details><summary>Mostrar completo</summary>{{ iban_completo }}</details>{% else %}—{% endif %}</dd>
+      <dt>Pagado</dt><dd>{{ totales.pagado }} €</dd>
+      <dt>Pendiente</dt><dd style="color:{{ 'var(--rojo)' if totales.pendiente else 'inherit' }}">{{ totales.pendiente }} €</dd>
+    </dl>
+  </div>
+  {% endif %}
+</div>
+
+{% if s.notas %}<h2>Notas</h2><div class="tarjeta" style="font-size:14px">{{ s.notas }}</div>{% endif %}
+
+{% if usuario.puede('datos_bancarios') %}
+<h2>Historial de cuotas</h2>
+<table>
+  <tr><th>Mes</th><th class="num">Importe</th><th>Estado</th><th>Fecha de pago</th><th></th></tr>
+  {% for c in cuotas %}
+  <tr>
+    <td>{{ c.mes }}</td>
+    <td class="num">{{ c.importe }} €</td>
+    <td>{% if c.pagada %}<span class="etiqueta verde">Pagada</span>{% else %}<span class="etiqueta amarilla">Pendiente</span>{% endif %}</td>
+    <td>{{ c.fecha_pago or '' }}</td>
+    <td style="text-align:right">{% if not c.pagada %}
+      {{ boton_cobrar(url_for('cuota_cobrar', id_=c.id), forma_inicial(s)|trim, '<input type="hidden" name="volver" value="%d">'|format(s.id)) }}{% endif %}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5"><i>Sin cuotas.</i></td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% if usuario.puede('datos_bancarios') %}
+<div class="rejilla">
+  <div>
+    <h2>Equipaciones</h2>
+    <table>
+      <tr><th>Fecha</th><th>Producto</th><th>Talla</th><th class="num">Importe</th><th>Estado</th></tr>
+      {% for p in pedidos %}
+      <tr><td>{{ p.fecha }}</td><td>{{ p.producto.nombre }}{% if p.cantidad > 1 %} ×{{ p.cantidad }}{% endif %}</td><td>{{ p.talla }}</td>
+          <td class="num">{{ p.importe }} €</td><td>{{ p.estado }}</td></tr>
+      {% else %}<tr><td colspan="5"><i>Sin pedidos.</i></td></tr>{% endfor %}
+    </table>
+  </div>
+  <div>
+    <h2>Últimas reservas</h2>
+    <table>
+      <tr><th>Fecha</th><th>Pista</th><th>Hora</th><th>Estado</th></tr>
+      {% for r in reservas %}
+      <tr><td>{{ r.fecha }}</td><td>{{ r.instalacion.nombre }}</td><td>{{ r.hora_inicio }}:00–{{ r.hora_fin }}:00</td>
+          <td>{{ r.estado }}{% if r.estado == 'Confirmada' and not r.pagada %} · por cobrar{% endif %}</td></tr>
+      {% else %}<tr><td colspan="4"><i>Sin reservas.</i></td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
+<p><a href="{{ url_for('socios') }}">← Volver a socios</a></p>
+{% endblock %}

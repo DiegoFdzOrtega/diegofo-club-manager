@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Socios{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+  <div><h1>{{ 'Socios' if usuario.puede('ver_todos') else 'Jugadores de ' ~ usuario.equipo.nombre }}</h1><div class="sub">Pulsa en un nombre para ver su ficha completa.</div></div>
+  {% if usuario.puede('editar_socios') %}<a class="boton principal" href="{{ url_for('socio_nuevo') }}">+ Nuevo socio</a>{% endif %}
+</div>
+<form class="panel" method="get">
+  <label>Buscar por nombre <input name="q" value="{{ q }}" placeholder="p. ej. García"></label>
+  {% if usuario.puede('ver_todos') %}
+  <label>Sección
+    <select name="deporte"><option value="">Todas</option>{% for d in deportes %}<option {{ 'selected' if deporte == d }}>{{ d }}</option>{% endfor %}</select>
+  </label>
+  <label>Grupo
+    <select name="grupo"><option value="0">Todos</option>
+      {% for e in equipos %}<option value="{{ e.id }}" {{ 'selected' if grupo == e.id }}>{{ e.nombre }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  <input type="hidden" name="ver" value="{{ ver }}">
+  <button class="secundario">Buscar</button>
+  {% if q %}<a href="{{ url_for('socios', ver=ver) }}">Quitar filtro</a>{% endif %}
+</form>
+<div class="filtros">Ver:
+  {% for clave, texto in [('activos','De alta'), ('revisar','Fichas que revisar'), ('bajas','De baja'), ('todos','Todos')] %}
+    <a href="{{ url_for('socios', ver=clave, q=q, grupo=grupo or None, deporte=deporte or None) }}" class="{{ 'activo' if ver == clave }}">{{ texto }}</a>
+  {% endfor %}
+  <span class="sub" style="margin-left:8px">{{ socios|length }} socio(s)</span>
+</div>
+<table>
+  <tr><th>Nº</th><th>Nombre</th><th>DNI</th><th class="num">Edad</th><th>Grupo</th>{% if usuario.puede('datos_bancarios') %}<th>Pago</th><th>IBAN</th>{% endif %}<th>Estado</th></tr>
+  {% for s in socios %}
+  <tr class="{{ '' if s.activo else 'inactivo' }}">
+    <td>{{ s.id }}</td>
+    <td><a href="{{ url_for('ficha', id_=s.id) }}"><b>{{ s.nombre }}</b></a></td>
+    <td>{{ s.dni }}</td>
+    <td class="num">{{ s.edad if s.edad is not none else '' }}</td>
+    <td>{{ s.equipo.nombre }}</td>
+    {% if usuario.puede('datos_bancarios') %}
+    <td>{{ s.forma_pago }}</td>
+    <td style="font-family:Consolas,monospace;font-size:12px">{{ s.iban_oculto }}</td>
+    {% endif %}
+    <td>
+      {% if not s.activo %}<span class="etiqueta gris">Baja</span>
+      {% elif s.avisos(usuario.puede('datos_bancarios')) %}<span class="etiqueta amarilla" title="{{ s.avisos(usuario.puede('datos_bancarios'))|join(' ') }}">Revisar</span>
+      {% else %}<span class="etiqueta verde">OK</span>{% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="8"><i>No hay socios.</i></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

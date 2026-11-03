@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titulo %}Tarifas{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+  <div>
+    <h1>Tarifas de cuotas</h1>
+    <div class="sub">Cada equipo tiene una tarifa por defecto. En la ficha de un socio se le puede poner otra o un descuento.
+      Los cambios se aplican a las <b>próximas</b> cuotas que se generen.</div>
+  </div>
+  <a class="boton secundario" href="{{ url_for('cuotas') }}">← Volver a cuotas</a>
+</div>
+
+<table>
+  <tr><th>Tarifa</th><th>Descripción</th><th class="num">Socios</th><th>Importe (€/mes)</th><th>Activa</th><th></th></tr>
+  {% for t in tarifas %}
+  <tr class="{{ '' if t.activa else 'inactivo' }}">
+    <td><b>{{ t.nombre }}</b></td>
+    <td>{{ t.descripcion }}</td>
+    <td class="num">{{ uso.get(t.id, 0) }}</td>
+    <td><input form="tarifa{{ t.id }}" name="importe" type="number" min="1" value="{{ t.importe }}" style="width:90px"> €</td>
+    <td><select form="tarifa{{ t.id }}" name="activa"><option value="si" {{ 'selected' if t.activa }}>Sí</option><option value="no" {{ 'selected' if not t.activa }}>No</option></select></td>
+    <td style="text-align:right">
+      <form id="tarifa{{ t.id }}" class="en-linea" method="post" action="{{ url_for('tarifa_editar', id_=t.id) }}"><button class="secundario">Guardar</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div class="rejilla" style="margin-top:22px">
+  <div class="tarjeta">
+    <h3>Tarifa de cada equipo</h3>
+    <table style="font-size:13px">
+      {% for e in equipos %}
+      <tr>
+        <td><b>{{ e.nombre }}</b><br><span class="sub">{{ e.categoria }}</span></td>
+        <td style="text-align:right">
+          <form class="en-linea" method="post" action="{{ url_for('equipo_tarifa', id_=e.id) }}">
+            <select name="tarifa">{% for t in tarifas if t.activa %}<option value="{{ t.id }}" {{ 'selected' if e.tarifa_id == t.id }}>{{ t.nombre }} ({{ t.importe }} €)</option>{% endfor %}</select>
+            <button class="secundario">Aplicar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <form class="tarjeta" method="post" style="display:flex;flex-direction:column;gap:10px">
+    <h3>Nueva tarifa</h3>
+    <label>Nombre <input name="nombre" required maxlength="30" placeholder="p. ej. Verano"></label>
+    <label>Importe (€/mes) <input name="importe" type="number" min="1" required></label>
+    <label>Descripción <input name="descripcion"></label>
+    <div><button class="principal">Crear tarifa</button></div>
+  </form>
+</div>
+{% endblock %}

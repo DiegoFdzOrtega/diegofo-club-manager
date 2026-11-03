@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Recibo nº {{ '%06d'|format(m.id) }} · {{ club }}</title>
+<style>
+  body { font-family: "Segoe UI", system-ui, sans-serif; color:#1c2b24; background:#f3f6f4; margin:0; }
+  .recibo { width:420px; margin:40px auto; background:white; padding:28px 30px; border-radius:10px;
+            box-shadow:0 6px 30px rgba(15,61,46,.12); border-top:6px solid #f2b705; }
+  h1 { font-size:18px; margin:0; color:#0f3d2e; }
+  .sub { color:#5f7369; font-size:12px; }
+  dl { display:grid; grid-template-columns:120px 1fr; gap:8px; margin:22px 0; font-size:14px; }
+  dt { color:#5f7369; } dd { margin:0; font-weight:600; }
+  .total { display:flex; justify-content:space-between; align-items:baseline; border-top:2px dashed #cfd8d3; padding-top:14px; }
+  .total b { font-size:30px; color:#0f3d2e; }
+  .pie { margin-top:20px; font-size:11px; color:#5f7369; text-align:center; }
+  button { margin:0 auto 30px; display:block; background:#0f3d2e; color:white; border:0; border-radius:6px;
+           padding:9px 18px; font-weight:600; cursor:pointer; font-family:inherit; }
+  @media print { body { background:white; } .recibo { box-shadow:none; margin:0 auto; } button { display:none; } }
+</style>
+</head>
+<body>
+<div class="recibo">
+  <h1>{{ club }}</h1>
+  <div class="sub">Recibo nº {{ '%06d'|format(m.id) }}</div>
+  <dl>
+    <dt>Fecha</dt><dd>{{ m.fecha }} {{ m.hora }}</dd>
+    {% if m.socio %}<dt>Socio</dt><dd>{{ m.socio.nombre }} (nº {{ m.socio_id }})</dd>
+    {% if m.socio.dni %}<dt>DNI</dt><dd>{{ m.socio.dni }}</dd>{% endif %}{% endif %}
+    <dt>Concepto</dt><dd>{{ m.tipo }}: {{ m.concepto }}</dd>
+    <dt>Forma de pago</dt><dd>{{ m.forma }}</dd>
+    <dt>Atendido por</dt><dd>{{ m.usuario.nombre if m.usuario else '' }}</dd>
+  </dl>
+  <div class="total"><span>TOTAL</span><b>{{ m.importe }} €</b></div>
+  <div class="pie">Gracias · estadio · Club Manager</div>
+</div>
+<button onclick="window.print()">🖨 Imprimir</button>
+</body>
+</html>

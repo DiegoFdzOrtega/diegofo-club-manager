@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}{% endblock %} · {{ club }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+<header>
+  <div class="marca"><b>estadio <span>·</span> Club Manager</b><small>{{ club }}</small></div>
+  <nav>
+    <a href="{{ url_for('inicio') }}" class="{{ 'activo' if request.endpoint == 'inicio' }}">Inicio</a>
+    <a href="{{ url_for('socios') }}" class="{{ 'activo' if request.endpoint in ('socios','ficha','editar','socio_nuevo') }}">
+      {{ 'Socios' if usuario.puede('ver_todos') else 'Mi equipo' }}</a>
+    <a href="{{ url_for('actividades') }}" class="{{ 'activo' if request.endpoint == 'actividades' }}">Actividades</a>
+    {% if usuario.puede('ver_reservas') %}
+    <a href="{{ url_for('reservas') }}" class="{{ 'activo' if request.endpoint in ('reservas','reserva_nueva') }}">Reservas</a>
+    {% endif %}
+    {% if usuario.puede('cuotas') %}
+    <a href="{{ url_for('cuotas') }}" class="{{ 'activo' if request.endpoint in ('cuotas','tarifas') }}">Cuotas</a>
+    {% endif %}
+    {% if usuario.puede('tienda') %}
+    <a href="{{ url_for('tienda') }}" class="{{ 'activo' if request.endpoint == 'tienda' }}">Tienda</a>
+    {% endif %}
+    {% if usuario.puede('caja') %}
+    <a href="{{ url_for('caja') }}" class="{{ 'activo' if request.endpoint == 'caja' }}">Caja</a>
+    {% endif %}
+    {% if usuario.puede('informe') %}
+    <a href="{{ url_for('informe') }}" class="{{ 'activo' if request.endpoint == 'informe' }}">Informe</a>
+    {% endif %}
+    {% if usuario.puede('usuarios') %}
+    <a href="{{ url_for('usuarios') }}" class="{{ 'activo' if request.endpoint == 'usuarios' }}">Usuarios</a>
+    {% endif %}
+  </nav>
+  <div class="usuario-caja">
+    <b>{{ usuario.nombre }}</b>
+    <span class="rol">{{ usuario.rol }}{% if usuario.equipo %} · {{ usuario.equipo.nombre }}{% endif %}</span>
+    <a href="{{ url_for('mi_cuenta') }}">Mi cuenta</a><a href="{{ url_for('salir') }}">Salir</a>
+  </div>
+</header>
+<main>
+  {% for tipo, texto in get_flashed_messages(with_categories=true) %}
+    <div class="aviso {{ tipo }}">{{ texto }}
+      {% if recibo and tipo == 'ok' and loop.last %}
+        <a class="boton secundario" style="margin-left:10px" href="{{ url_for('recibo', id_=recibo) }}" target="_blank">🧾 Imprimir recibo</a>
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% block contenido %}{% endblock %}
+
+  {% if ver_sql %}
+  <div class="sql">
+    {% if sql_accion %}
+      <h4>SQL generado por la última acción</h4>
+      {% for linea in sql_accion %}<div>{{ linea }}</div>{% endfor %}
+    {% endif %}
+    <h4>SQL generado para mostrar esta página <span style="opacity:.6;text-transform:none;letter-spacing:0">(solo lo ve el administrador)</span></h4>
+    {% for linea in sql_pagina() %}<div>{{ linea }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  <footer>estadio · Club Manager · motor diegofo | estadio 2.1 + estadio_orm · Diego Fernández Ortega · Datos de ejemplo inventados</footer>
+</main>
+</body>
+</html>

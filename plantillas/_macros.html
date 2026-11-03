@@ -1,0 +1,12 @@
+{# Botón de cobro con la forma de pago: se usa en cuotas, reservas y tienda #}
+{% macro boton_cobrar(accion, por_defecto='Efectivo', extra='') %}
+<form class="en-linea cobro" method="post" action="{{ accion }}">
+  {{ extra|safe }}
+  <select name="forma" title="Forma de cobro">
+    {% for f in formas_cobro %}<option {{ 'selected' if f == por_defecto }}>{{ f }}</option>{% endfor %}
+  </select>
+  <button class="oro">Cobrar</button>
+</form>
+{% endmacro %}
+
+{% macro forma_inicial(socio) %}{{ 'Domiciliación' if socio and socio.forma_pago == 'Domiciliación' else ('Transferencia' if socio and socio.forma_pago == 'Transferencia' else 'Efectivo') }}{% endmacro %}

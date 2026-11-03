@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titulo %}Caja{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+  <div>
+    <h1>Caja del día</h1>
+    <div class="sub">Todo lo cobrado en recepción: cuotas, reservas y equipaciones.</div>
+  </div>
+  <div class="navegar-dia no-imprimir">
+    <form method="get" class="en-linea"><input type="date" name="fecha" value="{{ fecha }}" onchange="this.form.submit()"></form>
+    <a class="boton secundario" href="{{ url_for('caja', fecha=hoy_iso) }}">Hoy</a>
+    <button class="principal" onclick="window.print()">🖨 Imprimir cierre de caja</button>
+  </div>
+</div>
+
+<div class="rejilla">
+  <div class="tarjeta">
+    <h3>Total del {{ fecha }}</h3>
+    <div class="total-caja">{{ total }} €</div>
+    <div class="sub">{{ movimientos|length }} cobro(s)</div>
+  </div>
+  <div class="tarjeta">
+    <h3>Por forma de cobro</h3>
+    <dl>{% for f in por_forma %}<dt>{{ f.forma }} ({{ f.cobros }})</dt><dd>{{ f.total }} €</dd>{% else %}<dt>—</dt><dd></dd>{% endfor %}</dl>
+  </div>
+  <div class="tarjeta">
+    <h3>Por concepto</h3>
+    <dl>{% for t in por_tipo %}<dt>{{ t.tipo }} ({{ t.cobros }})</dt><dd>{{ t.total }} €</dd>{% else %}<dt>—</dt><dd></dd>{% endfor %}</dl>
+  </div>
+</div>
+
+<h2>Cobros</h2>
+<table>
+  <tr><th>Hora</th><th>Tipo</th><th>Concepto</th><th>Socio</th><th>Forma</th><th>Cobrado por</th><th class="num">Importe</th><th class="no-imprimir"></th></tr>
+  {% for m in movimientos %}
+  <tr>
+    <td>{{ m.hora }}</td>
+    <td>{{ m.tipo }}</td>
+    <td>{{ m.concepto }}</td>
+    <td>{{ m.socio.nombre if m.socio else '—' }}</td>
+    <td>{{ m.forma }}</td>
+    <td>{{ m.usuario.nombre if m.usuario else '' }}</td>
+    <td class="num">{{ m.importe }} €</td>
+    <td class="no-imprimir"><a href="{{ url_for('recibo', id_=m.id) }}" target="_blank">Recibo</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="8"><i>Ningún cobro este día.</i></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

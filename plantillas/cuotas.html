@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import boton_cobrar, forma_inicial with context %}
+{% block titulo %}Cuotas{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+  <h1>Cuotas</h1>
+  {% if usuario.puede('tarifas') %}<a class="boton secundario" href="{{ url_for('tarifas') }}">Tarifas: 30 € · 50 € · 100 €…</a>{% endif %}
+</div>
+<div class="filtros">Ver:
+  <a href="{{ url_for('cuotas', ver='pendientes') }}" class="{{ 'activo' if solo_pendientes }}">Pendientes</a>
+  <a href="{{ url_for('cuotas', ver='todas') }}" class="{{ 'activo' if not solo_pendientes }}">Todas</a>
+</div>
+<table>
+  <tr><th>Mes</th><th>Socio</th><th>Pago</th><th class="num">Importe</th><th>Estado</th><th></th></tr>
+  {% for c in cuotas %}
+  <tr>
+    <td>{{ c.mes }}</td>
+    <td><a href="{{ url_for('ficha', id_=c.socio_id) }}">{{ c.socio.nombre }}</a></td>
+    <td>{{ c.socio.forma_pago }}</td>
+    <td class="num">{{ c.importe }} €</td>
+    <td>{% if c.pagada %}<span class="etiqueta verde">Pagada {{ c.fecha_pago }}</span>{% else %}<span class="etiqueta amarilla">Pendiente</span>{% endif %}</td>
+    <td style="text-align:right">
+      {% if not c.pagada %}
+      {{ boton_cobrar(url_for('cuota_cobrar', id_=c.id), forma_inicial(c.socio)|trim) }}
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6"><i>No hay cuotas {{ 'pendientes' if solo_pendientes }}.</i></td></tr>
+  {% endfor %}
+</table>
+
+<div class="rejilla" style="margin-top:22px">
+  <form class="panel" method="post" action="{{ url_for('cuotas_generar') }}">
+    <label>Generar las cuotas del mes <input name="mes" value="{{ mes_actual }}" pattern="[0-9]{4}-[0-9]{2}" required></label>
+    <button class="principal">Generar</button>
+    <div class="sub" style="width:100%">Para todos los socios de alta, en una transacción, con la tarifa y el descuento de cada uno.</div>
+  </form>
+  <form class="panel" method="get" action="{{ url_for('remesa') }}">
+    <label>Remesa bancaria del mes <input name="mes" value="{{ mes_actual }}" pattern="[0-9]{4}-[0-9]{2}" required></label>
+    <button class="oro">Descargar CSV</button>
+    <div class="sub" style="width:100%">Cuotas pendientes de los socios que pagan por domiciliación, con su IBAN, para enviar al banco.</div>
+  </form>
+</div>
+{% endblock %}

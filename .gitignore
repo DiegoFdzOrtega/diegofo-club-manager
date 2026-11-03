@@ -1,0 +1,14 @@
+# Se generan al ejecutar (no se suben)
+__pycache__/
+*.egg-info/
+build/
+datos_club/
+club_sqlalchemy.db
+motor/estadio
+motor/estadio.exe
+
+# Clave secreta de la web: NUNCA se sube
+.clave_web
+
+# Apuntes personales para la defensa (no se suben)
+GUIA_DEFENSA.md
